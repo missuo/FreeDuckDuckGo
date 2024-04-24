@@ -1,0 +1,42 @@
+name: Release
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos: [linux, windows, darwin]
+        goarch: [amd64, arm64]
+    steps:
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.22'
+
+    - name: Check out code
+      uses: actions/checkout@v4
+
+    - name: Build
+      env:
+        GOOS: ${{ matrix.goos }}
+        GOARCH: ${{ matrix.goarch }}
+      run: |
+        go build -v -o FreeDuckDuckGo-${{ matrix.goos }}-${{ matrix.goarch }}
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: FreeDuckDuckGo-${{ matrix.goos }}-${{ matrix.goarch }}
+        path: FreeDuckDuckGo-${{ matrix.goos }}-${{ matrix.goarch }}
+  
+    - name: Upload Artifact to Release
+      uses: softprops/action-gh-release@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        files: ./FreeDuckDuckGo-${{ matrix.goos }}-${{ matrix.goarch }}
