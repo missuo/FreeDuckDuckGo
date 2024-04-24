@@ -1,0 +1,6 @@
+services:
+  FreeDuckDuckGo:
+    image: ghcr.io/missuo/freeduckduckgo:latest
+    restart: always
+    ports:
+      - "3456:3456"
