@@ -40,6 +40,20 @@ type OpenAIDelta struct {
 	Content string `json:"content,omitempty"`
 }
 
+type OpenAINonStreamResponse struct {
+	ID      string                  `json:"id"`
+	Object  string                  `json:"object"`
+	Created int64                   `json:"created"`
+	Model   string                  `json:"model"`
+	Choices []OpenAINonStreamChoice `json:"choices"`
+}
+
+type OpenAINonStreamChoice struct {
+	Index        int         `json:"index"`
+	Message      OpenAIDelta `json:"message"`
+	FinishReason *string     `json:"finish_reason"`
+}
+
 type DuckDuckGoResponse struct {
 	Role    string `json:"role"`
 	Message string `json:"message"`
@@ -133,7 +147,9 @@ func chatWithDuckDuckGo(c *gin.Context, messages []struct {
 	flusher, _ := c.Writer.(http.Flusher)
 
 	var response OpenAIResponse
+	var nonStreamResponse OpenAINonStreamResponse
 	response.Choices = make([]OpenAIChoice, 1)
+	nonStreamResponse.Choices = make([]OpenAINonStreamChoice, 1)
 
 	var responseContent string
 
@@ -152,10 +168,11 @@ func chatWithDuckDuckGo(c *gin.Context, messages []struct {
 
 			if bytes.HasPrefix(chunk, []byte("[DONE]")) {
 				if !stream {
-					response.Choices[0].Delta.Content = responseContent
-					response.Choices[0].FinishReason = new(string)
-					*response.Choices[0].FinishReason = "stop"
-					c.JSON(http.StatusOK, response)
+					nonStreamResponse.Choices[0].Message.Content = responseContent
+					nonStreamResponse.Choices[0].Message.Role = "assistant"
+					nonStreamResponse.Choices[0].FinishReason = new(string)
+					*nonStreamResponse.Choices[0].FinishReason = "stop"
+					c.JSON(http.StatusOK, nonStreamResponse)
 					return
 				} else {
 					// send stop
@@ -182,6 +199,10 @@ func chatWithDuckDuckGo(c *gin.Context, messages []struct {
 			response.Object = "chat.completion"
 			response.Created = data.Created
 			response.Model = data.Model
+			nonStreamResponse.ID = data.ID
+			nonStreamResponse.Object = "chat.completion"
+			nonStreamResponse.Created = data.Created
+			nonStreamResponse.Model = data.Model
 			responseContent += data.Message
 
 			if stream {
