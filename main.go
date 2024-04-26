@@ -244,7 +244,10 @@ func stringPtr(s string) *string {
 func main() {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
-	r.Use(cors.Default())
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowAllOrigins = true
+	corsConfig.AddAllowHeaders("Authorization") // Use the "Add" method
+	r.Use(cors.New(corsConfig))
 
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
