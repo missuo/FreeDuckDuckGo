@@ -175,12 +175,25 @@ func chatWithDuckDuckGo(c *gin.Context, messages []struct {
 					c.JSON(http.StatusOK, nonStreamResponse)
 					return
 				} else {
-					stopData := `{"id":"chatcmpl-9HOzx2PhnYCLPxQ3Dpa2OKoqR2lgl","object":"chat.completion","created":1713934697,"model":"gpt-3.5-turbo-0125","choices":[{"index":0,"delta":{"content":""},"logprobs":null,"finish_reason":"stop"}]}`
-					c.Data(http.StatusOK, "application/json", []byte("data: "+stopData+"\n\n"))
+					stopData := OpenAIResponse{
+						ID:      "chatcmpl-9HOzx2PhnYCLPxQ3Dpa2OKoqR2lgl",
+						Object:  "chat.completion",
+						Created: 1713934697,
+						Model:   "gpt-3.5-turbo-0125",
+						Choices: []OpenAIChoice{
+							{
+								Index:        0,
+								FinishReason: stringPtr("stop"),
+							},
+						},
+					}
+					stopDataBytes, _ := json.Marshal(stopData)
+					c.Data(http.StatusOK, "application/json", []byte("data: "))
+					c.Data(http.StatusOK, "application/json", stopDataBytes)
+					c.Data(http.StatusOK, "application/json", []byte("\n\n"))
 					flusher.Flush()
 
-					doneData := `[DONE]`
-					c.Data(http.StatusOK, "application/json", []byte("data: "+doneData+"\n\n"))
+					c.Data(http.StatusOK, "application/json", []byte("data: [DONE]\n\n"))
 					flusher.Flush()
 					return
 				}
@@ -222,6 +235,10 @@ func chatWithDuckDuckGo(c *gin.Context, messages []struct {
 
 		}
 	}
+}
+
+func stringPtr(s string) *string {
+	return &s
 }
 
 func main() {
