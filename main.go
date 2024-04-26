@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -244,10 +243,6 @@ func stringPtr(s string) *string {
 func main() {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
-	corsConfig := cors.DefaultConfig()
-	corsConfig.AllowAllOrigins = true
-	corsConfig.AddAllowHeaders("Authorization") // Use the "Add" method
-	r.Use(cors.New(corsConfig))
 
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
