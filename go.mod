@@ -1,4 +1,4 @@
-module github.com/missuo/FreeGPT35
+module github.com/missuo/FreeDuckDuckGo
 
 go 1.22.2
 
