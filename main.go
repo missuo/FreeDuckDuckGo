@@ -221,6 +221,12 @@ func main() {
 	r := gin.Default()
 	r.Use(cors.Default())
 
+	r.GET("/", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Hello! Thank you for using FreeDuckDuckGo. Made by Vincent Yang. Repo: https://github.com/missuo/FreeDuckDuckGo",
+		})
+	})
+
 	r.POST("/v1/chat/completions", func(c *gin.Context) {
 		var req OpenAIRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
