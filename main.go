@@ -17,6 +17,7 @@ type OpenAIRequest struct {
 		Role    string `json:"role"`
 		Content string `json:"content"`
 	} `json:"messages"`
+	Stream bool `json:"stream"`
 }
 
 type OpenAIResponse struct {
@@ -34,8 +35,22 @@ type OpenAIChoice struct {
 	FinishReason *string     `json:"finish_reason"`
 }
 
+type OpenAINonStreamResponse struct {
+	ID      string                  `json:"id"`
+	Object  string                  `json:"object"`
+	Created int64                   `json:"created"`
+	Model   string                  `json:"model"`
+	Choices []OpenAINonStreamChoice `json:"choices"`
+}
+type OpenAINonStreamChoice struct {
+	Index        int         `json:"index"`
+	Message      OpenAIDelta `json:"message"`
+	FinishReason *string     `json:"finish_reason"`
+}
+
 type OpenAIDelta struct {
-	Content string `json:"content"`
+	Role    string `json:"role,omitempty"`
+	Content string `json:"content,omitempty"`
 }
 
 type DuckDuckGoResponse struct {
@@ -50,7 +65,7 @@ type DuckDuckGoResponse struct {
 func chatWithDuckDuckGo(c *gin.Context, messages []struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
-}) {
+}, stream bool) {
 	userAgent := "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:123.0) Gecko/20100101 Firefox/123.0"
 	headers := map[string]string{
 		"User-Agent":      userAgent,
@@ -133,6 +148,8 @@ func chatWithDuckDuckGo(c *gin.Context, messages []struct {
 	var response OpenAIResponse
 	response.Choices = make([]OpenAIChoice, 1)
 
+	var responseContent string
+
 	for {
 		line, err := reader.ReadBytes('\n')
 		if err != nil {
@@ -147,18 +164,28 @@ func chatWithDuckDuckGo(c *gin.Context, messages []struct {
 			chunk := line[6:]
 
 			if bytes.HasPrefix(chunk, []byte("[DONE]")) {
-				// send stop
-				c.Data(http.StatusOK, "text/plain", []byte("data: {\"id\":\"chatcmpl-9HOzx2PhnYCLPxQ3Dpa2OKoqR2lgl\",\"object\":\"chat.completion\",\"created\":1713934697,\"model\":\"gpt-3.5-turbo-0125\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\"},\"logprobs\":null,\"finish_reason\":\"stop\"}]}\n\n"))
-				flusher.Flush()
+				if !stream {
+					response.Choices[0].Delta.Content = responseContent
+					response.Choices[0].FinishReason = new(string)
+					*response.Choices[0].FinishReason = "stop"
+					c.JSON(http.StatusOK, response)
+					return
+				} else {
+					// send stop
+					c.Data(http.StatusOK, "text/plain", []byte("data: {\"id\":\"chatcmpl-9HOzx2PhnYCLPxQ3Dpa2OKoqR2lgl\",\"object\":\"chat.completion\",\"created\":1713934697,\"model\":\"gpt-3.5-turbo-0125\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\"},\"logprobs\":null,\"finish_reason\":\"stop\"}]}\n\n"))
+					flusher.Flush()
 
-				// send done
-				c.Data(http.StatusOK, "text/plain", []byte("data: [DONE]"))
-				flusher.Flush()
-				return
+					// send done
+					c.Data(http.StatusOK, "text/plain", []byte("data: [DONE]"))
+					flusher.Flush()
+					return
+				}
 			}
 
 			var data DuckDuckGoResponse
-			err = json.Unmarshal(chunk, &data)
+			decoder := json.NewDecoder(bytes.NewReader(chunk))
+			decoder.UseNumber()
+			err = decoder.Decode(&data)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return
@@ -168,18 +195,23 @@ func chatWithDuckDuckGo(c *gin.Context, messages []struct {
 			response.Object = "chat.completion"
 			response.Created = data.Created
 			response.Model = data.Model
-			response.Choices[0].Delta.Content = data.Message
+			responseContent += data.Message
 
-			responseBytes, err := json.Marshal(response)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-				return
+			if stream {
+				response.Choices[0].Delta.Content = data.Message
+
+				responseBytes, err := json.Marshal(response)
+				if err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+					return
+				}
+
+				c.Data(http.StatusOK, "text/plain", append(append([]byte("data: "), responseBytes...), []byte("\n\n")...))
+				flusher.Flush()
+
+				response.Choices[0].Delta.Content = ""
 			}
 
-			c.Data(http.StatusOK, "text/plain", append(append([]byte("data: "), responseBytes...), []byte("\n\n")...))
-			flusher.Flush()
-
-			response.Choices[0].Delta.Content = ""
 		}
 	}
 }
@@ -203,8 +235,21 @@ func main() {
 		}
 		// set model to gpt-3.5-turbo-0125
 		req.Model = "gpt-3.5-turbo-0125"
+		chatWithDuckDuckGo(c, req.Messages, req.Stream)
+	})
 
-		chatWithDuckDuckGo(c, req.Messages)
+	r.GET("/v1/models", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"object": "list",
+			"data": []gin.H{
+				{
+					"id":       "gpt-3.5-turbo-0125",
+					"object":   "model",
+					"created":  1692901427,
+					"owned_by": "system",
+				},
+			},
+		})
 	})
 
 	r.Run(":3456")
