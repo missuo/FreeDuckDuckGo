@@ -6,7 +6,7 @@
 
 ```bash
 mkdir FreeDuckDuckGo && cd FreeDuckDuckGo
-wget -O compose.yaml https://raw.githubusercontent.com/missuo/FreeDuckDuckGo/main/compose/compose.yaml
+wget -O compose.yaml https://raw.githubusercontent.com/missuo/FreeDuckDuckGo/main/compose.yaml
 docker compose up -d
 ```
 
