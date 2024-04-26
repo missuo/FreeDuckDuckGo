@@ -35,19 +35,6 @@ type OpenAIChoice struct {
 	FinishReason *string     `json:"finish_reason"`
 }
 
-type OpenAINonStreamResponse struct {
-	ID      string                  `json:"id"`
-	Object  string                  `json:"object"`
-	Created int64                   `json:"created"`
-	Model   string                  `json:"model"`
-	Choices []OpenAINonStreamChoice `json:"choices"`
-}
-type OpenAINonStreamChoice struct {
-	Index        int         `json:"index"`
-	Message      OpenAIDelta `json:"message"`
-	FinishReason *string     `json:"finish_reason"`
-}
-
 type OpenAIDelta struct {
 	Role    string `json:"role,omitempty"`
 	Content string `json:"content,omitempty"`
