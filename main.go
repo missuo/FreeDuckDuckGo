@@ -180,7 +180,7 @@ func chatWithDuckDuckGo(c *gin.Context, messages []struct {
 					flusher.Flush()
 
 					doneData := `[DONE]`
-					c.Data(http.StatusOK, "application/json", []byte("data: "+doneData))
+					c.Data(http.StatusOK, "application/json", []byte("data: "+doneData+"\n\n"))
 					flusher.Flush()
 					return
 				}
