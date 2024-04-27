@@ -84,8 +84,8 @@ func chatWithDuckDuckGo(c *gin.Context, messages []struct {
 		"TE":              "trailers",
 	}
 
-	statusURL := "https://duckduckgo.com/duckchat/v1/status"
-	chatURL := "https://duckduckgo.com/duckchat/v1/chat"
+	statusURL := "https://duck.ai/duckchat/v1/status"
+	chatURL := "https://duck.ai/duckchat/v1/chat"
 
 	// get vqd_4
 	req, err := http.NewRequest("GET", statusURL, nil)
@@ -93,7 +93,9 @@ func chatWithDuckDuckGo(c *gin.Context, messages []struct {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
+ 
+  req.Host="duckduckgo.com"
+  
 	req.Header.Set("x-vqd-accept", "1")
 	for key, value := range headers {
 		req.Header.Set(key, value)
@@ -124,6 +126,8 @@ func chatWithDuckDuckGo(c *gin.Context, messages []struct {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+  req.Host="duckduckgo.com"
 
 	req.Header.Set("x-vqd-4", vqd4)
 	for key, value := range headers {
