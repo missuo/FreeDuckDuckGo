@@ -87,7 +87,7 @@ func chatWithDuckDuckGo(c *gin.Context, messages []struct {
 
 	statusURL := "https://duckduckgo.com/duckchat/v1/status"
 	chatURL := "https://duckduckgo.com/duckchat/v1/chat"
-	
+
 	// Some countries or regions require a domain fronting for direct access. 
 	domainFronting := os.Getenv("ENABLE_DOMAIN_FRONTING")
 	if domainFronting == "yes" {
