@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 )
@@ -83,22 +84,31 @@ func chatWithDuckDuckGo(c *gin.Context, messages []struct {
 		"Pragma":          "no-cache",
 		"TE":              "trailers",
 	}
-
-	statusURL := "https://duck.ai/duckchat/v1/status"
-	chatURL := "https://duck.ai/duckchat/v1/chat"
-
+	
+	statusURL := "https://duckduckgo.com/duckchat/v1/status"
+	chatURL := "https://duckduckgo.com/duckchat/v1/chat"
+	
+	// Some countries or regions require a domain fronting for direct access. 
+	domainFronting := os.Getenv("ENABLE_DOMAIN_FRONTING")
+	if domainFronting == "yes" {
+ 		statusURL = "https://duck.ai/duckchat/v1/status"
+		chatURL = "https://duck.ai/duckchat/v1/chat"
+	}
 	// get vqd_4
 	req, err := http.NewRequest("GET", statusURL, nil)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
- 
-	req.Host="duckduckgo.com"
-  
+
 	req.Header.Set("x-vqd-accept", "1")
 	for key, value := range headers {
 		req.Header.Set(key, value)
+	}
+
+	if domainFronting == "yes" {
+		// use duckduckgo.com as the value of Host, avoid HTTP 302 redirects
+		req.Host = "duckduckgo.com"
 	}
 
 	resp, err := http.DefaultClient.Do(req)
@@ -127,7 +137,10 @@ func chatWithDuckDuckGo(c *gin.Context, messages []struct {
 		return
 	}
 
-	req.Host="duckduckgo.com"
+	if domainFronting == "yes" {
+		// use duckduckgo.com as the value of Host, avoid HTTP 302 redirects
+		req.Host = "duckduckgo.com"
+	}
 
 	req.Header.Set("x-vqd-4", vqd4)
 	for key, value := range headers {
