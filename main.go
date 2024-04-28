@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -89,8 +90,12 @@ func chatWithDuckDuckGo(c *gin.Context, messages []struct {
 	chatURL := "https://duckduckgo.com/duckchat/v1/chat"
 
 	// Some countries or regions require a domain fronting for direct access. 
-	domainFronting := os.Getenv("ENABLE_DOMAIN_FRONTING")
-	if domainFronting == "yes" {
+	domainFrontingEnv := os.Getenv("ENABLE_DOMAIN_FRONTING")
+	domainFronting, err := strconv.ParseBool(domainFrontingEnv)
+	if err != nil {
+		domainFronting = false
+	}
+	if domainFronting {
  		statusURL = "https://duck.ai/duckchat/v1/status"
 		chatURL = "https://duck.ai/duckchat/v1/chat"
 	}
@@ -106,7 +111,7 @@ func chatWithDuckDuckGo(c *gin.Context, messages []struct {
 		req.Header.Set(key, value)
 	}
 
-	if domainFronting == "yes" {
+	if domainFronting {
 		// use duckduckgo.com as the value of Host, avoid HTTP 302 redirects
 		req.Host = "duckduckgo.com"
 	}
@@ -137,7 +142,7 @@ func chatWithDuckDuckGo(c *gin.Context, messages []struct {
 		return
 	}
 
-	if domainFronting == "yes" {
+	if domainFronting {
 		// use duckduckgo.com as the value of Host, avoid HTTP 302 redirects
 		req.Host = "duckduckgo.com"
 	}
