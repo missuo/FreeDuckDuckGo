@@ -94,7 +94,7 @@ func chatWithDuckDuckGo(c *gin.Context, messages []struct {
 		return
 	}
  
-  req.Host="duckduckgo.com"
+	req.Host="duckduckgo.com"
   
 	req.Header.Set("x-vqd-accept", "1")
 	for key, value := range headers {
@@ -127,7 +127,7 @@ func chatWithDuckDuckGo(c *gin.Context, messages []struct {
 		return
 	}
 
-  req.Host="duckduckgo.com"
+	req.Host="duckduckgo.com"
 
 	req.Header.Set("x-vqd-4", vqd4)
 	for key, value := range headers {
