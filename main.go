@@ -84,7 +84,7 @@ func chatWithDuckDuckGo(c *gin.Context, messages []struct {
 		"Pragma":          "no-cache",
 		"TE":              "trailers",
 	}
-	
+
 	statusURL := "https://duckduckgo.com/duckchat/v1/status"
 	chatURL := "https://duckduckgo.com/duckchat/v1/chat"
 	
